@@ -1,7 +1,11 @@
 import base64
-import music_service
+import service
 import requests
 import urlparse
+
+import os
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.sys.path.insert(0, parentdir)
 import utilities as util
 
 SPOTIFY_URL_AUTHORIZE = 'https://accounts.spotify.com/en/authorize'
@@ -14,7 +18,7 @@ def initialize(client_id, client_secret):
     redirect_uri = 'http://localhost'
     state = util.random_string(14)
     scope = 'playlist-modify-private'
-    auth_url = '{}?client_id={}&response_type=code&redirect_uri={}&state={}&scope={}'.format(
+    authorization_url = '{}?client_id={}&response_type=code&redirect_uri={}&state={}&scope={}'.format(
         SPOTIFY_URL_AUTHORIZE,
         client_id,
         redirect_uri,
@@ -26,21 +30,21 @@ def initialize(client_id, client_secret):
     util.info('Now opening a browser to authorize your Spotify account.')
     util.info('Once authorized, copy/paste the URL of that browser window here.')
     util.info('Finally, hit enter to complete the auhtorization process.')
-    util.open_url(auth_url)
+    util.open_url(authorization_url)
 
     # Deal with the return code:
     authorization_response = util.prompt('Enter the URL', None)
     parsed = urlparse.urlparse(authorization_response)
     authorization_args = urlparse.parse_qs(parsed.query)
 
-    if state == authorization_args['state'][0]:
+    if state == authorization_args.get('state')[0]:
         if 'code' in authorization_args:
             # The authorization succeeded:
             params = {
                 'client_id': client_id,
                 'client_secret': client_secret,
                 'grant_type': 'authorization_code',
-                'code': authorization_args['code'][0],
+                'code': authorization_args.get('code')[0],
                 'redirect_uri': redirect_uri
             }
             r = requests.post(SPOTIFY_URL_GET_TOKENS, data=params)
@@ -48,7 +52,7 @@ def initialize(client_id, client_secret):
         else:
             # The authorization failed:
             if 'error' in authorization_args:
-                raise music_service.AuthorizationError(authorization_args['error'][0])
+                raise music_service.AuthorizationError(authorization_args.get('error')[0])
             else:
                 raise music_service.AuthorizationError('unknown authorization error')
     else:

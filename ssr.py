@@ -1,7 +1,8 @@
 import click
 import lib.config as cfg
-import lib.music_service as music_service
-import lib.spotify as spotify
+import lib.services.beatport as beatport
+import lib.services.service as service
+import lib.services.spotify as spotify
 import lib.utilities as util
 import time
 
@@ -52,6 +53,26 @@ def init_beatport(config):
     Initializes a connection to Beatport.
     """
     util.info('Initializing Beatport...')
+    util.info('You can find keys at https://oauth-api.beatport.com.')
+    client_id = util.prompt('Input your Beatport Client ID')
+    client_secret = util.prompt('Input your Beatport Client Secret')
+
+    tokens = beatport.initialize(client_id, client_secret)
+    if tokens:
+        if not 'beatport' in config.token_data:
+            config.token_data['beatport'] = {}
+
+        config.token_data['beatport']['access_token'] = tokens['oauth_token']
+        config.token_data['beatport']['access_secret'] = tokens['oauth_token_secret']
+        config.token_data.write()
+
+        if config.verbose:
+            util.debug('Beatport access token: {}'.format(tokens['oauth_token']))
+            util.debug('Beatport access secret: {}'.format(tokens['oauth_token_secret']))
+
+        util.success('Beatport successfully initialized!')
+    else:
+        util.error('Some unknown error occured...')
 
 def init_lastfm(config):
     """
@@ -96,7 +117,7 @@ def init_spotify(config):
             util.success('Spotify successfully initialized!')
         else:
             util.error('Some unknown error occured...')
-    except music_service.AuthorizationError as err:
+    except service.AuthorizationError as err:
         util.error('Spotify did not authorize correctly: {}'.format(err))
     except spotify.SpotifyStateError as err:
         util.error('Spotify state mismatch between request and response...')

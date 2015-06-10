@@ -7,7 +7,13 @@ CONFIG_FILE = os.path.expanduser('~/.ssr/config.yaml')
 TOKENS_FILE = os.path.expanduser('~/.ssr/tokens.yaml')
 
 class Config(object):
+    """
+    A configuration class that makes use of ConfigObj.
+    """
     def __init__(self):
+        """
+        Initialization!
+        """
         # Create our directory if it's not already there:
         if not os.path.exists(CONFIG_DIR):
             os.makedirs(CONFIG_DIR)

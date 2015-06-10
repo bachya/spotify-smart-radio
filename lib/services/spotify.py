@@ -1,30 +1,46 @@
-import base64
-import service
-import requests
-import urlparse
-
 import os
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.sys.path.insert(0, parentdir)
+
+import base64
+import click
+import config
+import service
+import requests
+import urlparse
 import utilities as util
 
-SPOTIFY_URL_AUTHORIZE = 'https://accounts.spotify.com/en/authorize'
-SPOTIFY_URL_GET_TOKENS = 'https://accounts.spotify.com/api/token'
+REQUEST_TOKEN_URL = 'https://accounts.spotify.com/en/authorize'
+ACCESS_TOKEN_URL = 'https://accounts.spotify.com/api/token'
+CALLBACK_URI = 'http://127.0.0.1/spotify-smart-radio'
+API_BASE_URL = 'https://api.spotify.com'
 
 class SpotifyStateError(Exception):
+    """
+    A Spotify error to be raised when the state values between Spotify requests
+    and responses don't match.
+    """
     pass
 
-def initialize(client_id, client_secret):
-    redirect_uri = 'http://localhost'
+def authorize(client_id, client_secret, config):
+    """
+    A module method to authorize Spotify using a OAuth client ID and client
+    secret.
+    """
     state = util.random_string(14)
     scope = 'playlist-modify-private'
-    authorization_url = '{}?client_id={}&response_type=code&redirect_uri={}&state={}&scope={}'.format(
-        SPOTIFY_URL_AUTHORIZE,
-        client_id,
-        redirect_uri,
+    authorization_url = '{}?client_id={}&response_type=code'.format(
+        REQUEST_TOKEN_URL,
+        client_id
+    )
+    authorization_url += '&redirect_uri={}&state={}&scope={}'.format(
+        CALLBACK_URI,
         state,
         scope
     )
+
+    if config.verbose:
+        util.debug('Authorization URL constructed: {}'.format(authorization_url))
 
     # Prompt the user to authorize via a browser:
     util.info('Now opening a browser to authorize your Spotify account.')
@@ -37,6 +53,10 @@ def initialize(client_id, client_secret):
     parsed = urlparse.urlparse(authorization_response)
     authorization_args = urlparse.parse_qs(parsed.query)
 
+    if config.verbose:
+        util.debug('Authorization arguments: {}'.format(authorization_args))
+
+    # Check to make sure the states between request and response match:
     if state == authorization_args.get('state')[0]:
         if 'code' in authorization_args:
             # The authorization succeeded:
@@ -45,9 +65,13 @@ def initialize(client_id, client_secret):
                 'client_secret': client_secret,
                 'grant_type': 'authorization_code',
                 'code': authorization_args.get('code')[0],
-                'redirect_uri': redirect_uri
+                'redirect_uri': CALLBACK_URI
             }
-            r = requests.post(SPOTIFY_URL_GET_TOKENS, data=params)
+            r = requests.post(ACCESS_TOKEN_URL, data=params)
+
+            if config.verbose:
+                util.debug('Access response: {}'.format(r.content))
+
             return r.json()
         else:
             # The authorization failed:

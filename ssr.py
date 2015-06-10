@@ -1,5 +1,5 @@
 import click
-import lib.config as cfg
+import lib.config
 import lib.services.beatport as beatport
 import lib.services.service as service
 import lib.services.spotify as spotify
@@ -7,7 +7,7 @@ import lib.utilities as util
 import time
 
 # Create a config object decorator:
-pass_config = click.make_pass_decorator(cfg.Config, ensure=True)
+pass_config = click.make_pass_decorator(lib.config.Config, ensure=True)
 
 @click.group()
 @click.option('-v', '--verbose', is_flag=True, help='Enable verbose output')
@@ -20,9 +20,9 @@ def cli(config, verbose):
 @cli.command()
 @click.argument('service')
 @pass_config
-def init(config, service):
+def authorize(config, service):
     """
-    Initialize a music service. Valid options are: Beatport, Last.FM,
+    Authorize a music service. Valid options are: Beatport, Last.FM,
     SoundCloud, Spotify
     """
 
@@ -35,10 +35,10 @@ def init(config, service):
 
     # These are the valid services and their initialization functions:
     valid_options = {
-        'beatport': init_beatport,
-        'lastfm': init_lastfm,
-        'soundcloud': init_soundcloud,
-        'spotify': init_spotify,
+        'beatport': authorize_beatport,
+        'lastfm': authorize_lastfm,
+        'soundcloud': authorize_soundcloud,
+        'spotify': authorize_spotify,
     }
 
     # If the user provides a valid service, start initializing it; otherwise,
@@ -48,55 +48,58 @@ def init(config, service):
     else:
         util.error('"{}" is not a valid service.'.format(service))
 
-def init_beatport(config):
+def authorize_beatport(config):
     """
-    Initializes a connection to Beatport.
+    Authorizes a connection to Beatport.
     """
-    util.info('Initializing Beatport...')
+    util.info('Authorizing Beatport...')
     util.info('You can find keys at https://oauth-api.beatport.com.')
     client_id = util.prompt('Input your Beatport Client ID')
     client_secret = util.prompt('Input your Beatport Client Secret')
 
-    tokens = beatport.initialize(client_id, client_secret)
-    if tokens:
-        if not 'beatport' in config.token_data:
-            config.token_data['beatport'] = {}
+    try:
+        tokens = beatport.authorize(client_id, client_secret, config)
+        if tokens:
+            if not 'beatport' in config.token_data:
+                config.token_data['beatport'] = {}
 
-        config.token_data['beatport']['access_token'] = tokens['oauth_token']
-        config.token_data['beatport']['access_secret'] = tokens['oauth_token_secret']
-        config.token_data.write()
+            config.token_data['beatport']['access_token'] = tokens['oauth_token']
+            config.token_data['beatport']['access_secret'] = tokens['oauth_token_secret']
+            config.token_data.write()
 
-        if config.verbose:
-            util.debug('Beatport access token: {}'.format(tokens['oauth_token']))
-            util.debug('Beatport access secret: {}'.format(tokens['oauth_token_secret']))
+            if config.verbose:
+                util.debug('Beatport access token: {}'.format(tokens['oauth_token']))
+                util.debug('Beatport access secret: {}'.format(tokens['oauth_token_secret']))
 
-        util.success('Beatport successfully initialized!')
-    else:
-        util.error('Some unknown error occured...')
+            util.success('Beatport successfully authorized!')
+        else:
+            util.error('Some unknown error occured...')
+    except service.AuthorizationError as err:
+        util.error('Beatport did not authorize correctly: {}'.format(err))
 
-def init_lastfm(config):
+def authorize_lastfm(config):
     """
-    Initializes a connection to Last.FM.
+    Authorizes a connection to Last.FM.
     """
-    util.info('Initializing Last.FM...')
+    util.info('Authorizing Last.FM...')
 
-def init_soundcloud(config):
+def authorize_soundcloud(config):
     """
-    Initializes a connection to SoundCloud.
+    Authorizes a connection to SoundCloud.
     """
-    util.info('Initializing SoundCloud...')
+    util.info('Authorizing SoundCloud...')
 
-def init_spotify(config):
+def authorize_spotify(config):
     """
-    Initializes a connection to Spotify.
+    Authorizes a connection to Spotify.
     """
-    util.info('Initializing Spotify...')
+    util.info('Authorizing Spotify...')
     util.info('You can find keys at https://developer.spotify.com/my-applications.')
     client_id = util.prompt('Input your Spotify Client ID')
     client_secret = util.prompt('Input your Spotify Client Secret')
 
     try:
-        tokens = spotify.initialize(client_id, client_secret)
+        tokens = spotify.authorize(client_id, client_secret, config)
         if tokens:
             if not 'spotify' in config.token_data:
                 config.token_data['spotify'] = {}
@@ -114,7 +117,7 @@ def init_spotify(config):
                     tokens['refresh_token'])
                 )
 
-            util.success('Spotify successfully initialized!')
+            util.success('Spotify successfully authorized!')
         else:
             util.error('Some unknown error occured...')
     except service.AuthorizationError as err:

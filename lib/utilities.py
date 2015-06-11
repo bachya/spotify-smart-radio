@@ -4,6 +4,12 @@ import string
 import subprocess
 import sys
 
+def confirm(string):
+    """
+    Outputs a confirmation-flavored string.
+    """
+    return click.confirm(click.style(string, fg='magenta'), abort=True)
+
 def debug(string):
     """
     Outputs a debug-flavored string.

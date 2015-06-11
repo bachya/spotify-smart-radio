@@ -46,6 +46,7 @@ def authorize(client_id, client_secret, config):
     util.info('Now opening a browser to authorize your Spotify account.')
     util.info('Once authorized, copy/paste the URL of that browser window here.')
     util.info('Finally, hit enter to complete the auhtorization process.')
+    util.confirm('Do you want to continue?')
     util.open_url(authorization_url)
 
     # Deal with the return code:

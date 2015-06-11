@@ -82,6 +82,22 @@ def authorize_lastfm(config):
     Authorizes a connection to Last.FM.
     """
     util.info('Authorizing Last.FM...')
+    util.info('You can find keys at http://www.last.fm/api.')
+    api_key = util.prompt('Input your Last.FM API Key')
+    api_secret = util.prompt('Input your Last.FM API Secret')
+
+    if not 'lastfm' in config.token_data:
+        config.token_data['lastfm'] = {}
+
+    config.token_data['lastfm']['api_key'] = api_key
+    config.token_data['lastfm']['api_secret'] = api_secret
+    config.token_data.write()
+
+    if config.verbose:
+        util.debug('Last.FM API key: {}'.format(api_key))
+        util.debug('Last.FM API secret: {}'.format(api_secret))
+
+    util.success('Last.FM successfully authorized!')
 
 def authorize_soundcloud(config):
     """

@@ -60,7 +60,7 @@ def authorize_beatport(config):
     try:
         tokens = beatport.authorize(client_id, client_secret, config)
         if tokens:
-            if not 'beatport' in config.token_data:
+            if 'beatport' not in config.token_data:
                 config.token_data['beatport'] = {}
 
             config.token_data['beatport']['access_token'] = tokens['oauth_token']
@@ -86,7 +86,7 @@ def authorize_lastfm(config):
     api_key = util.prompt('Input your Last.FM API Key')
     api_secret = util.prompt('Input your Last.FM API Secret')
 
-    if not 'lastfm' in config.token_data:
+    if 'lastfm' not in config.token_data:
         config.token_data['lastfm'] = {}
 
     config.token_data['lastfm']['api_key'] = api_key
@@ -117,7 +117,7 @@ def authorize_spotify(config):
     try:
         tokens = spotify.authorize(client_id, client_secret, config)
         if tokens:
-            if not 'spotify' in config.token_data:
+            if 'spotify' not in config.token_data:
                 config.token_data['spotify'] = {}
 
             refresh_time = int(time.time()) + tokens['expires_in']

@@ -22,7 +22,7 @@ def enum(*sequential, **named):
     http://stackoverflow.com/a/1695250
     """
     enums = dict(zip(sequential, range(len(sequential))), **named)
-    reverse = dict((value, key) for key, value in enums.iteritems())
+    reverse = {value: key for key, value in enums.iteritems()}
     enums['reverse_mapping'] = reverse
     return type('Enum', (), enums)
 
